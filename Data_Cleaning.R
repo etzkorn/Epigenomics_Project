@@ -1,5 +1,5 @@
 ### Load Data 
-    setwd("~/Documents/GitHub/Methods_Project/")
+    setwd("~/Documents/GitHub/Method_Project_Data/")
     data <- read.delim("Project1_Data_Nohead.txt")
     
 ### Packages
@@ -20,10 +20,15 @@
     df$variable <- NULL 
     colnames(df)[colnames(df)=="value"] <- "signal"
 
+### Medium Width Data Format
+    df2 <- dcast(df, chr+locus+start+end+cell+signal.type ~ sample, value.var = "signal")
+    colnames(df2)[7:8] <- c("sample_1", "sample_2")
+    
 ### Wide Data Format
-    df2 <- dcast(df, locus+chr+signal.type~cell+sample, value.var="signal")
+    df3 <- dcast(df, locus+chr+signal.type ~ cell+sample, value.var="signal")
     
 ### Write CSV
-    write.csv(df, file="Clean_Data.csv")
-    write.csv(df2, file="Clean_Data_Wide.csv")
+    save(df, file="Clean_Data_Narrow.Robj")
+    save(df2, file="Clean_Data.Robj")
+    save(df3, file="Clean_Data_Wide.Robj")
     

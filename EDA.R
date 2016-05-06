@@ -1,10 +1,13 @@
 ### Read Data
     require(ggplot2)
     require(dplyr)
-    setwd("~/Documents/GitHub/Methods_Project/")
-    df <- read.csv(file="Clean_Data.csv") # use long data in ggplot
-    df2 <- read.csv(file="Clean_Data_Wide.csv") # use long data in ggplot
-    
+    require(reshape2)
+    require(longitudinal)
+    setwd("~/Documents/GitHub/")
+    load(file="Method_Project_Data/Clean_Data_Narrow.Robj") 
+    load(file="Method_Project_Data/Clean_Data.Robj") 
+    load(file="Method_Project_Data/Clean_Data_Wide.Robj") 
+
 ### Summary Statistics
     # 58997 Loci
     length(unique(df$locus))
@@ -15,6 +18,13 @@
     table(df$cell)
     table(df$signal.type)
     table(df$sample)
+    
+### Check to see if samples are iid
+    df2$diffs <- with(df2,  sample_1 - sample_2)
+    tapply(df2$diffs, FUN=mean, INDEX = df2[c("signal.type","cell")])
+    ggplot(df2) +
+        geom_density(aes(x=diffs, fill=signal.type), alpha=0.25) + 
+        facet_grid(signal.type~cell) + xlim(c(-20,20)) 
     
 ### Graphics
     # we will use log(signal for EDA)
@@ -48,6 +58,39 @@ for(i in chrom){
     cat("yay", i)
 }
 
+### Look at just one small location on the genome
+x <- filter(df, chr=="chr1", locus<100)
+ggplot(x)+
+    geom_point(aes(x=start, y=signal, color=signal.type), alpha=0.25) + 
+    facet_grid(signal.type~cell, scales="free_y", space="fixed")+
+    geom_smooth(aes(x=start, y=signal, color=signal.type))
+
+### Look at autocorrelation along genome
+par(mfrow=c(2,2))
+x <- filter(data, chr=="chr1")
+series.data <- as.matrix(as.vector(t(as.matrix(select(x, K562_H3K4me1_BR1, K562_H3K4me1_BR2)))))
+one.series <- as.longitudinal(x=series.data, repeats=2, time=x$start)
+acf(one.series, lag.max = 200, type = c("correlation"), main="Autocorr K562 H3K4me1 chr1")
+
+x <- filter(data, chr=="chr1")
+series.data <- as.matrix(as.vector(t(as.matrix(select(x, Huvec_H3K4me1_BR1, Huvec_H3K4me1_BR2)))))
+one.series <- as.longitudinal(x=series.data, repeats=2, time=x$start)
+acf(one.series, lag.max = 200, type = c("correlation"), main="Autocorr Huvec H3K4me1 chr1")
+
+x <- filter(data, chr=="chr1")
+series.data <- as.matrix(as.vector(t(as.matrix(select(x, K562_Control_BR1, K562_Control_BR2)))))
+one.series <- as.longitudinal(x=series.data, repeats=2, time=x$start)
+acf(one.series, lag.max = 200, type = c("correlation"), main="Autocorr K562 Control chr1")
+
+x <- filter(data, chr=="chr1")
+series.data <- as.matrix(as.vector(t(as.matrix(select(x, Huvec_Control_BR1, Huvec_Control_BR2)))))
+one.series <- as.longitudinal(x=series.data, repeats=2, time=x$start)
+acf(one.series, lag.max = 200, type = c("correlation"), main="Autocorr Huvec Control chr1")
+
+
+acf(x.ts,100)
+head(data)
+
 ### Correlation between signal types
 ggplot(data)+
     geom_point(aes(x=K562_Control_BR, y=K562_Control_BR2))
@@ -58,9 +101,9 @@ ggplot(df) +
     geom_point(aes)
 
 ### Correlation between cell measurements
-ggplot(df2) +
+ggplot(df3) +
     geom_point(aes(x=Huvec_1, y=Huvec_2, col=signal.type), alpha=0.25)+
     facet_wrap("signal.type", scales="free")
-ggplot(df2) +
+ggplot(df3) +
     geom_point(aes(x=K562_1, y=K562_2, col=signal.type), alpha=0.25)+
     facet_wrap("signal.type", scales="free")
